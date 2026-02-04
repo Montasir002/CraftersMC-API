@@ -3,31 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CraftersMC Mobile Dashboard</title>
-    <link rel="stylesheet" href="style.css">
+    <title>CraftersMC Mobile</title>
+    <style>
+        /* Mobile-First CSS */
+        body { background: #121212; color: white; font-family: sans-serif; padding: 15px; margin: 0; }
+        .container { max-width: 100%; margin: 0 auto; }
+        input, button { 
+            width: 100%; box-sizing: border-box; padding: 15px; 
+            margin-bottom: 10px; border-radius: 8px; border: none; font-size: 16px; 
+        }
+        button { background: #00aa00; color: white; font-weight: bold; }
+        .card { background: #1e1e1e; padding: 15px; border-radius: 12px; margin-top: 15px; border: 1px solid #333; }
+        h1 { font-size: 24px; text-align: center; }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <header>
-            <h1>CraftersMC Stats</h1>
-        </header>
+    <div class="container">
+        <h1>Server Stats</h1>
+        <input type="password" id="apiKey" placeholder="API Key (/api)">
+        <input type="text" id="username" placeholder="Username">
+        <button onclick="fetchData()">Get Stats</button>
 
-        <section class="auth-box">
-            <input type="password" id="apiKey" placeholder="API Key">
-            <input type="text" id="username" placeholder="Username">
-            <button onclick="fetchData()">Load Data</button>
-        </section>
-
-        <div class="grid">
-            <div class="card">
-                <h3>Network</h3>
-                <p>Online: <span id="playerCount">--</span></p>
-            </div>
-            <div class="card">
-                <h3>Player</h3>
-                <p>Rank: <span id="rank">--</span></p>
-                <p>Time: <span id="playtime">--</span></p>
-            </div>
+        <div id="results" class="card" style="display:none;">
+            <p><strong>Rank:</strong> <span id="rank">--</span></p>
+            <p><strong>Playtime:</strong> <span id="playtime">--</span></p>
         </div>
     </div>
     <script src="script.js"></script>
