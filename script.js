@@ -7,49 +7,43 @@ async function fetchData() {
         return;
     }
 
-    // This proxy is better for GitHub Pages as it doesn't require manual activation
-    const proxy = "https://corsproxy.io/?";
+    // We use a proxy that handles the "handshake" for us
+    const proxy = "https://api.allorigins.win/raw?url=";
     const apiBase = "https://api.craftersmc.net/v1";
     
-    const networkUrl = proxy + encodeURIComponent(`${apiBase}/network/status`);
-    const playerUrl = proxy + encodeURIComponent(`${apiBase}/player/${user}`);
+    const networkUrl = `${proxy}${encodeURIComponent(apiBase + '/network/status')}`;
+    const playerUrl = `${proxy}${encodeURIComponent(apiBase + '/player/' + user)}`;
 
-    const requestOptions = {
-        method: 'GET',
-        headers: {
-            'X-API-Key': key,
-            'Accept': 'application/json'
-        }
-    };
-
-    // Show loading state
-    document.getElementById('playerCount').innerText = "Loading...";
+    // Show loading
+    document.getElementById('playerCount').innerText = "Connecting...";
 
     try {
-        // 1. Get Network Stats (Public Endpoint)
-        const netRes = await fetch(networkUrl, requestOptions);
-        if (!netRes.ok) throw new Error(`Network Error: ${netRes.status}`);
+        // Fetch Network Status
+        const netRes = await fetch(networkUrl, {
+            headers: { "X-API-Key": key }
+        });
+
+        if (!netRes.ok) throw new Error(`Server returned ${netRes.status}`);
         
         const netData = await netRes.json();
         document.getElementById('playerCount').innerText = netData.playerCount;
         document.getElementById('maxPlayers').innerText = netData.maxPlayerCount;
         document.getElementById('maintenance').innerText = netData.fullMaintenance ? "YES" : "NO";
 
-        // 2. Get Player Stats (Requires username)
+        // Fetch Player Stats
         if (user) {
-            const playRes = await fetch(playerUrl, requestOptions);
-            if (!playRes.ok) throw new Error(`Player Error: ${playRes.status}`);
-            
+            const playRes = await fetch(playerUrl, {
+                headers: { "X-API-Key": key }
+            });
             const playData = await playRes.json();
-            // Fields like selectedRank and language are part of the Player schema
+            
             document.getElementById('rank').innerText = playData.selectedRank || "None";
-            document.getElementById('playtime').innerText = playData.totalPlaytime ? Math.round(playData.totalPlaytime / 3600) + "h" : "0h";
-            document.getElementById('language').innerText = playData.language || "Unknown";
+            document.getElementById('playtime').innerText = Math.round(playData.totalPlaytime / 3600) + "h";
+            document.getElementById('language').innerText = playData.language || "English";
         }
-
     } catch (err) {
-        console.error("Fetch Details:", err);
-        document.getElementById('playerCount').innerText = "Error";
-        alert("Fetch failed. This is usually caused by the API server blocking the connection or an invalid API Key.");
+        console.error("Critical Error:", err);
+        document.getElementById('playerCount').innerText = "Blocked";
+        alert("The API is blocking the browser request. \n\nReason: CORS Policy. \n\nTo fix this for good, you would need a small backend (Node.js) instead of just a static HTML file.");
     }
 }
