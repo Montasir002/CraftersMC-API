@@ -1,63 +1,35 @@
-const btn = document.getElementById("fetchBtn");
-const output = document.getElementById("output");
+async function fetchData() {
+    const key = document.getElementById('apiKey').value;
+    const user = document.getElementById('username').value;
+    const baseUrl = "https://api.craftersmc.net/v1";
 
-btn.onclick = async () => {
+    const headers = {
+        "X-API-Key": key,
+        "Content-Type": "application/json"
+    };
 
-    const apiKey = document.getElementById("apiKey").value.trim();
-    const username = document.getElementById("username").value.trim();
+    try {
+        // 1. Fetch Network Status
+        const netRes = await fetch(`${baseUrl}/network/status`, { headers });
+        const netData = await netRes.json();
+        document.getElementById('playerCount').innerText = netData.playerCount;
+        document.getElementById('maxPlayers').innerText = netData.maxPlayerCount;
+        document.getElementById('maintenance').innerText = netData.fullMaintenance ? "YES" : "NO";
 
-    if(!apiKey || !username){
-        alert("Enter API key and username");
-        return;
-    }
-
-    output.textContent = "Loading...";
-
-    try{
-
-        // Step 1 — Get Player
-        const playerRes = await fetch(
-            `https://api.craftersmc.net/v1/player/${username}`,
-            {
-                headers:{
-                    "X-API-Key": apiKey
-                }
+        // 2. Fetch Player Info
+        if (user) {
+            const playRes = await fetch(`${baseUrl}/player/${user}`, { headers });
+            if (playRes.ok) {
+                const playData = await playRes.json();
+                document.getElementById('rank').innerText = playData.selectedRank;
+                document.getElementById('playtime').innerText = Math.round(playData.totalPlaytime / 3600) + " hrs";
+                document.getElementById('language').innerText = playData.language;
+            } else {
+                alert("Player not found!");
             }
-        );
-
-        const playerData = await playerRes.json();
-
-        if(playerData.error){
-            output.textContent = JSON.stringify(playerData,null,2);
-            return;
         }
-
-        const profileId = playerData.profiles?.[0]?.profileId;
-
-        if(!profileId){
-            output.textContent = "No Skyblock profile found.";
-            return;
-        }
-
-        // Step 2 — Get Skyblock Profile
-        const profileRes = await fetch(
-            `https://api.craftersmc.net/v1/skyblock/profile/${profileId}`,
-            {
-                headers:{
-                    "X-API-Key": apiKey
-                }
-            }
-        );
-
-        const profileData = await profileRes.json();
-
-        // Show EVERYTHING for now
-        output.textContent = JSON.stringify(profileData,null,2);
-
-    }catch(err){
-
-        output.textContent = err.message;
-
+    } catch (err) {
+        console.error("Fetch error:", err);
+        alert("Check your API key or connection.");
     }
-
-};
+}
