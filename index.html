@@ -1,51 +1,241 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CraftersMC SkyBlock Tools</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+
+  <!-- MOBILE SAFE -->
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+
+  <title>Bazaar Admin | Secure Mobile</title>
+
+  <!-- PERFORMANCE: Preconnect Firebase CDN -->
+  <link rel="preconnect" href="https://www.gstatic.com">
+
+  <style>
+    :root{
+      --primary:#00ff00;
+      --bg-dark:#121212;
+      --card-bg:#1e1e1e;
+      --border:#333;
+    }
+
+    *{
+      box-sizing:border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body{
+      margin:0;
+      font-family:'Inter',-apple-system,sans-serif;
+      background:var(--bg-dark);
+      color:white;
+      display:flex;
+      justify-content:center;
+    }
+
+    .admin-container{
+      width:100%;
+      max-width:600px;
+      min-height:100vh;
+      padding:15px;
+      display:flex;
+      flex-direction:column;
+    }
+
+    .card{
+      background:var(--card-bg);
+      border-radius:12px;
+      padding:20px;
+      box-shadow:0 4px 15px rgba(0,0,0,.5);
+    }
+
+    #loginScreen{
+      margin-top:15vh;
+      text-align:center;
+    }
+
+    .input-field{
+      width:100%;
+      padding:12px;
+      margin:8px 0;
+      border-radius:8px;
+      border:1px solid var(--border);
+      background:#000;
+      color:white;
+      font-size:16px;
+    }
+
+    .header-flex{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:10px;
+    }
+
+    .search-box{
+      width:100%;
+      padding:12px 15px;
+      margin:10px 0;
+      border-radius:25px;
+      border:1px solid var(--border);
+      background:#2a2a2a;
+      color:white;
+      font-size:14px;
+    }
+
+    .item-list{
+      flex-grow:1;
+      overflow-y:auto;
+      margin:10px 0;
+      max-height:60vh;
+      border:1px solid var(--border);
+      border-radius:8px;
+      background:#181818;
+    }
+
+    .admin-row{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:12px;
+      border-bottom:1px solid var(--border);
+    }
+
+    .item-info{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      flex:1;
+    }
+
+    .item-icon{
+      width:32px;
+      height:32px;
+      object-fit:contain;
+      image-rendering:pixelated;
+    }
+
+    .price-input{
+      width:100px;
+      padding:8px;
+      background:#000;
+      color:var(--primary);
+      border:1px solid #444;
+      border-radius:6px;
+      text-align:center;
+      font-weight:bold;
+    }
+
+    .footer-actions{
+      position:sticky;
+      bottom:0;
+      background:var(--bg-dark);
+      padding:15px 0;
+    }
+
+    .primary-btn{
+      background:var(--primary);
+      color:black;
+      font-weight:700;
+      border:none;
+      padding:15px;
+      border-radius:10px;
+      width:100%;
+      cursor:pointer;
+    }
+
+    .secondary-btn{
+      background:transparent;
+      color:#888;
+      border:1px solid #444;
+      padding:5px 10px;
+      border-radius:4px;
+      cursor:pointer;
+    }
+
+    .hidden{
+      display:none !important;
+    }
+
+    #statusMsg{
+      text-align:center;
+      font-size:.85rem;
+      margin-top:10px;
+      min-height:1.2em;
+    }
+
+    #loginError{
+      color:#ff4444;
+      font-size:.85rem;
+      margin-top:10px;
+    }
+  </style>
+
+  <!-- ✅ DEFER = DOM SAFE -->
+  <script type="module" src="script.js" defer></script>
+
 </head>
+
 <body>
 
-<header>
-    <h1>⚡ SkyBlock Tools (API Test)</h1>
-</header>
+<div class="admin-container">
 
-<div class="container">
+  <!-- LOGIN -->
+  <div id="loginScreen" class="card">
+    <img src="https://craftersmc.net/data/assets/logo/newOriginal512.png"
+         style="width:80px;margin-bottom:10px;">
 
-    <!-- PROFILE SEARCH -->
-    <section class="card">
-        <h2>Player Profile Viewer</h2>
+    <h2>Bazaar Admin</h2>
 
-        <input id="profileId" placeholder="Enter Profile ID">
-        <button onclick="loadProfile()">Load Profile</button>
+    <input type="email"
+           id="email"
+           class="input-field"
+           placeholder="Admin Email">
 
-        <pre id="profileOutput">Profile data will appear here...</pre>
-    </section>
+    <input type="password"
+           id="password"
+           class="input-field"
+           placeholder="Password">
+
+    <button id="loginBtn" class="primary-btn">
+      Login
+    </button>
+
+    <div id="loginError"></div>
+  </div>
 
 
-    <!-- BAZAAR -->
-    <section class="card">
-        <h2>Live Bazaar Prices</h2>
+  <!-- DASHBOARD -->
+  <div id="adminDashboard" class="hidden">
 
-        <button onclick="loadBazaar()">Fetch Bazaar</button>
+    <div class="header-flex">
+      <h3>Price Control</h3>
+      <button id="logoutBtn" class="secondary-btn">
+        Logout
+      </button>
+    </div>
 
-        <div id="bazaarOutput"></div>
-    </section>
+    <input id="searchInput"
+           class="search-box"
+           placeholder="Search for an item...">
 
+    <div id="itemList" class="item-list">
+      <div style="padding:20px;text-align:center;color:#666;">
+        Loading items...
+      </div>
+    </div>
 
-    <!-- LEADERBOARD (SIMULATION) -->
-    <section class="card">
-        <h2>Leaderboard Test</h2>
+    <div class="footer-actions">
+      <button id="saveBtn" class="primary-btn">
+        Save All Changes
+      </button>
+      <div id="statusMsg"></div>
+    </div>
 
-        <button onclick="generateLeaderboard()">Generate Fake Leaderboard</button>
-
-        <ul id="leaderboard"></ul>
-    </section>
+  </div>
 
 </div>
 
-<script src="script.js"></script>
 </body>
 </html>
