@@ -1,36 +1,37 @@
 body {
-    background-color: #1a1a1a;
-    color: white;
-    font-family: 'Segoe UI', sans-serif;
-    display: flex;
-    justify-content: center;
+    background: #121212;
+    color: #eee;
+    font-family: sans-serif;
+    margin: 0;
     padding: 20px;
 }
-.container { width: 100%; max-width: 800px; text-align: center; }
-.auth-section { margin-bottom: 30px; }
-input {
-    padding: 10px;
-    border-radius: 5px;
-    border: none;
-    margin: 5px;
-    width: 200px;
+.app-container {
+    max-width: 500px; /* Limits width on desktop, but fits mobile perfectly */
+    margin: 0 auto;
 }
-button {
-    padding: 10px 20px;
-    background: #00aa00;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
+.auth-box {
+    display: flex;
+    flex-direction: column; /* Stacks inputs vertically on mobile */
+    gap: 10px;
+    margin-bottom: 20px;
 }
-.dashboard {
+input, button {
+    padding: 15px; /* Larger hit area for fingers */
+    border-radius: 8px;
+    border: none;
+    font-size: 16px; /* Prevents iOS from zooming in on input */
+}
+.grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    grid-template-columns: 1fr; /* One column on small screens */
+    gap: 15px;
+}
+@media (min-width: 600px) {
+    .grid { grid-template-columns: 1fr 1fr; } /* Two columns on tablets/PC */
 }
 .card {
-    background: #2a2a2a;
-    padding: 20px;
-    border-radius: 10px;
-    border-left: 5px solid #00aa00;
+    background: #1e1e1e;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #333;
 }
