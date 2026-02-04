@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CraftersMC SkyBlock Tools</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+    <h1>⚡ SkyBlock Tools (API Test)</h1>
+</header>
+
+<div class="container">
+
+    <!-- PROFILE SEARCH -->
+    <section class="card">
+        <h2>Player Profile Viewer</h2>
+
+        <input id="profileId" placeholder="Enter Profile ID">
+        <button onclick="loadProfile()">Load Profile</button>
+
+        <pre id="profileOutput">Profile data will appear here...</pre>
+    </section>
+
+
+    <!-- BAZAAR -->
+    <section class="card">
+        <h2>Live Bazaar Prices</h2>
+
+        <button onclick="loadBazaar()">Fetch Bazaar</button>
+
+        <div id="bazaarOutput"></div>
+    </section>
+
+
+    <!-- LEADERBOARD (SIMULATION) -->
+    <section class="card">
+        <h2>Leaderboard Test</h2>
+
+        <button onclick="generateLeaderboard()">Generate Fake Leaderboard</button>
+
+        <ul id="leaderboard"></ul>
+    </section>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
