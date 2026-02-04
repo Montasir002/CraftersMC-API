@@ -2,31 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CraftersMC Stats Tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CraftersMC Mobile Dashboard</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>CraftersMC API Dashboard</h1>
-        
-        <div class="auth-section">
-            <input type="text" id="apiKey" placeholder="Enter API Key (/api in-game)">
-            <input type="text" id="username" placeholder="Minecraft Username">
-            <button onclick="fetchData()">Get Stats</button>
-        </div>
+    <div class="app-container">
+        <header>
+            <h1>CraftersMC Stats</h1>
+        </header>
 
-        <div class="dashboard">
-            <div class="card" id="network-card">
-                <h2>Network Status</h2>
-                <p>Players: <span id="playerCount">--</span> / <span id="maxPlayers">--</span></p>
-                <p>Maintenance: <span id="maintenance">--</span></p>
+        <section class="auth-box">
+            <input type="password" id="apiKey" placeholder="API Key">
+            <input type="text" id="username" placeholder="Username">
+            <button onclick="fetchData()">Load Data</button>
+        </section>
+
+        <div class="grid">
+            <div class="card">
+                <h3>Network</h3>
+                <p>Online: <span id="playerCount">--</span></p>
             </div>
-
-            <div class="card" id="player-card">
-                <h2>Player Info</h2>
+            <div class="card">
+                <h3>Player</h3>
                 <p>Rank: <span id="rank">--</span></p>
-                <p>Playtime: <span id="playtime">--</span></p>
-                <p>Language: <span id="language">--</span></p>
+                <p>Time: <span id="playtime">--</span></p>
             </div>
         </div>
     </div>
