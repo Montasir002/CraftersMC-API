@@ -1,17 +1,13 @@
-// ⚡ CHANGE THIS
-const BASE_URL = "https://api.craftersmc.net";
+const btn = document.getElementById("fetchBtn");
+const output = document.getElementById("output");
 
-// ============================
-// PROFILE
-// ============================
+btn.onclick = async () => {
 
-async function loadProfile(){
+    const apiKey = document.getElementById("apiKey").value.trim();
+    const username = document.getElementById("username").value.trim();
 
-    const id = document.getElementById("profileId").value;
-    const output = document.getElementById("profileOutput");
-
-    if(!id){
-        alert("Enter profile ID");
+    if(!apiKey || !username){
+        alert("Enter API key and username");
         return;
     }
 
@@ -19,94 +15,49 @@ async function loadProfile(){
 
     try{
 
-        const res = await fetch(`${BASE_URL}/v1/skyblock/profile/${id}`);
+        // Step 1 — Get Player
+        const playerRes = await fetch(
+            `https://api.craftersmc.net/v1/player/${username}`,
+            {
+                headers:{
+                    "X-API-Key": apiKey
+                }
+            }
+        );
 
-        if(!res.ok)
-            throw new Error("API Error");
+        const playerData = await playerRes.json();
 
-        const data = await res.json();
+        if(playerData.error){
+            output.textContent = JSON.stringify(playerData,null,2);
+            return;
+        }
 
-        // Pretty print JSON
-        output.textContent = JSON.stringify(data, null, 2);
+        const profileId = playerData.profiles?.[0]?.profileId;
 
-    }catch(err){
+        if(!profileId){
+            output.textContent = "No Skyblock profile found.";
+            return;
+        }
 
-        output.textContent = "Failed to load profile.\n" + err;
-    }
-}
+        // Step 2 — Get Skyblock Profile
+        const profileRes = await fetch(
+            `https://api.craftersmc.net/v1/skyblock/profile/${profileId}`,
+            {
+                headers:{
+                    "X-API-Key": apiKey
+                }
+            }
+        );
 
+        const profileData = await profileRes.json();
 
-
-// ============================
-// BAZAAR
-// ============================
-
-async function loadBazaar(){
-
-    const container = document.getElementById("bazaarOutput");
-    container.innerHTML = "Loading...";
-
-    try{
-
-        const res = await fetch(`${BASE_URL}/v1/skyblock/bazaar`);
-
-        const data = await res.json();
-
-        container.innerHTML = "";
-
-        // Adjust depending on API structure
-        const items = data.products || data;
-
-        Object.keys(items).slice(0,20).forEach(item=>{
-
-            const price =
-                items[item]?.sellPrice ??
-                items[item]?.quick_status?.sellPrice ??
-                "N/A";
-
-            const div = document.createElement("div");
-            div.className="item";
-
-            div.innerHTML=`
-                <span>${item}</span>
-                <strong>${price}</strong>
-            `;
-
-            container.appendChild(div);
-        });
+        // Show EVERYTHING for now
+        output.textContent = JSON.stringify(profileData,null,2);
 
     }catch(err){
 
-        container.innerHTML="Failed to load bazaar.";
+        output.textContent = err.message;
+
     }
-}
 
-
-
-// ============================
-// FAKE LEADERBOARD
-// (Later replace with real stats)
-// ============================
-
-function generateLeaderboard(){
-
-    const board = document.getElementById("leaderboard");
-    board.innerHTML="";
-
-    const fakePlayers=[
-        "Technoblade",
-        "Dream",
-        "Notch",
-        "BuilderBoy",
-        "BazaarKing"
-    ];
-
-    fakePlayers
-        .sort(()=>Math.random()-0.5)
-        .forEach((p,i)=>{
-
-            const li=document.createElement("li");
-            li.textContent=`#${i+1} ${p}`;
-            board.appendChild(li);
-        });
-}
+};
