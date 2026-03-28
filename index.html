@@ -3,32 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CraftersMC Mobile</title>
+    <title>Sokoban AI Scanner</title>
     <style>
-        /* Mobile-First CSS */
-        body { background: #121212; color: white; font-family: sans-serif; padding: 15px; margin: 0; }
-        .container { max-width: 100%; margin: 0 auto; }
-        input, button { 
-            width: 100%; box-sizing: border-box; padding: 15px; 
-            margin-bottom: 10px; border-radius: 8px; border: none; font-size: 16px; 
-        }
-        button { background: #00aa00; color: white; font-weight: bold; }
-        .card { background: #1e1e1e; padding: 15px; border-radius: 12px; margin-top: 15px; border: 1px solid #333; }
-        h1 { font-size: 24px; text-align: center; }
+        :root { --bg: #121212; --panel: #1e1e1e; --accent: #2980b9; --success: #27ae60; --danger: #c0392b; --text: #eee; }
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: var(--bg); color: var(--text); padding: 10px; margin: 0; }
+        
+        #video-container { width: 90vw; max-width: 400px; position: relative; margin-bottom: 10px; border-radius: 12px; overflow: hidden; border: 2px solid #444; }
+        video { width: 100%; display: block; background: #000; }
+        #scan-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 2px solid rgba(0,255,0,0.5); pointer-events: none; box-sizing: border-box; }
+
+        .panel { background: var(--panel); padding: 15px; border-radius: 12px; margin-bottom: 15px; width: 90vw; max-width: 400px; }
+        .tool-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; justify-items: center; }
+        .tool { width: 45px; height: 45px; border: 2px solid #444; cursor: pointer; background-size: contain; background-repeat: no-repeat; background-position: center; border-radius: 8px; background-color: #333; }
+        .tool.selected { border-color: #00ff00; box-shadow: 0 0 10px rgba(0,255,0,0.3); }
+
+        .grid { display: grid; grid-template-columns: repeat(9, 1fr); width: 90vw; max-width: 400px; aspect-ratio: 1/1; gap: 1px; border: 2px solid #444; background: #333; }
+        .cell { background-size: contain; background-repeat: no-repeat; background-position: center; background-color: #222; display: flex; align-items: center; justify-content: center; }
+
+        .btns { margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 90vw; max-width: 400px; }
+        button { padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; }
+        textarea { width: 90vw; max-width: 400px; height: 100px; background: #000; color: #0f0; margin-top: 15px; border-radius: 6px; padding: 10px; box-sizing: border-box; font-family: monospace; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Server Stats</h1>
-        <input type="password" id="apiKey" placeholder="API Key (/api)">
-        <input type="text" id="username" placeholder="Username">
-        <button onclick="fetchData()">Get Stats</button>
 
-        <div id="results" class="card" style="display:none;">
-            <p><strong>Rank:</strong> <span id="rank">--</span></p>
-            <p><strong>Playtime:</strong> <span id="playtime">--</span></p>
-        </div>
+    <h2>Sokoban Mapper</h2>
+
+    <div id="video-container">
+        <video id="video" autoplay playsinline></video>
+        <div id="scan-overlay"></div>
     </div>
-    <script src="script.js"></script>
+
+    <div class="btns" style="margin-bottom: 20px;">
+        <button onclick="startCamera()" style="background:var(--accent);">On/Off Camera</button>
+        <button onclick="scanLevel()" style="background:#e67e22;">Scan Level</button>
+    </div>
+
+    <div class="panel">
+        <div class="tool-group" id="toolbox"></div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="btns">
+        <button onclick="resetGrid()" style="background:var(--danger);">Reset</button>
+        <button onclick="generate()" style="background:var(--success);">Generate</button>
+    </div>
+
+    <textarea id="output" readonly placeholder="Python level data will appear here..."></textarea>
+    <canvas id="procCanvas" width="360" height="360" style="display:none;"></canvas>
+
+    <script>
+        // Directly using your provided URLs (Mapped to IDs)
+        const IMAGE_MAP = {
+            0: "https://i.ibb.co.com/twR2psTC/Tree.png",
+            1: "https://i.ibb.co.com/qLsXKRXm/Wall.png",
+            2: "https://i.ibb.co.com/rGJXYXZ4/Player.png",
+            3: "https://i.ibb.co.com/7NjmwQj7/Goal.png",
+            4: "https://i.ibb.co.com/Kjqnc58f/Crate.png",
+            5: "https://i.ibb.co.com/HfCpmXyp/Floor.png",
+            6: "https://i.ibb.co.com/SDkKcr7J/Blue-player.png",
+            7: "https://i.ibb.co.com/whcScYLJ/Blue-crate.png"
+        };
+
+        let selectedTool = 1;
+        let gridData = Array(9).fill().map(() => Array(9).fill(0));
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('procCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function initTools() {
+            const box = document.getElementById('toolbox');
+            Object.keys(IMAGE_MAP).forEach(id => {
+                const tool = document.createElement('div');
+                tool.className = `tool ${id == selectedTool ? 'selected' : ''}`;
+                tool.style.backgroundImage = `url('${IMAGE_MAP[id]}')`;
+                tool.onclick = (e) => {
+                    selectedTool = id;
+                    document.querySelectorAll('.tool').forEach(t => t.classList.remove('selected'));
+                    tool.classList.add('selected');
+                };
+                box.appendChild(tool);
+            });
+        }
+
+        async function startCamera() {
+            try {
+                if (video.srcObject) {
+                    video.srcObject.getTracks().forEach(track => track.stop());
+                    video.srcObject = null;
+                } else {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                    video.srcObject = stream;
+                }
+            } catch (err) { alert("Camera error: " + err); }
+        }
+
+        function scanLevel() {
+            if (!video.srcObject) return alert("Start camera first!");
+            ctx.drawImage(video, 0, 0, 360, 360);
+            const step = 360 / 9;
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    const x = c * step + (step / 2);
+                    const y = r * step + (step / 2);
+                    const pixel = ctx.getImageData(x, y, 1, 1).data;
+                    gridData[r][c] = analyzeColor(pixel[0], pixel[1], pixel[2]);
+                }
+            }
+            renderGrid();
+        }
+
+        function analyzeColor(r, g, b) {
+            if (g > r + 15 && g > b + 15) return 0; // Tree
+            if (r < 60 && g < 60 && b < 60) return 1; // Wall
+            if (b > r + 30 && b > g + 30) return 3;   // Goal
+            if (r > 130 && g > 90 && b < 100) return 4; // Crate
+            if (r > 160 && g < 120 && b < 120) return 2; // Player
+            return 5; // Floor
+        }
+
+        function renderGrid() {
+            const container = document.getElementById('grid');
+            container.innerHTML = '';
+            gridData.forEach((row, r) => {
+                row.forEach((val, c) => {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.style.backgroundImage = `url('${IMAGE_MAP[val]}')`;
+                    cell.onclick = () => { gridData[r][c] = selectedTool; renderGrid(); };
+                    container.appendChild(cell);
+                });
+            });
+        }
+
+        function generate() {
+            let code = "level_data = [\n" + gridData.map(row => `    [${row.join(', ')}]`).join(",\n") + "\n]";
+            document.getElementById('output').value = code;
+        }
+
+        function resetGrid() {
+            if(confirm("Reset?")) { gridData = Array(9).fill().map(() => Array(9).fill(0)); renderGrid(); }
+        }
+
+        initTools();
+        renderGrid();
+    </script>
 </body>
 </html>
