@@ -3,15 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sokoban AI Scanner Pro</title>
+    <title>Sokoban Precision Scanner</title>
     <style>
         :root { --bg: #121212; --panel: #1e1e1e; --accent: #2980b9; --success: #27ae60; --danger: #c0392b; --text: #eee; }
         body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: var(--bg); color: var(--text); padding: 10px; margin: 0; }
         
         #video-container { width: 90vw; max-width: 400px; position: relative; margin-bottom: 10px; border-radius: 12px; overflow: hidden; border: 2px solid #444; }
         video { width: 100%; display: block; background: #000; }
-        #scan-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 2px solid rgba(0,255,0,0.5); pointer-events: none; box-sizing: border-box; display: grid; grid-template-columns: repeat(9, 1fr); grid-template-rows: repeat(9, 1fr); }
-        .guide-box { border: 0.1px solid rgba(255,255,255,0.1); }
+        
+        /* The Precision Scan Zone */
+        #scan-zone { 
+            position: absolute; 
+            top: 20%; left: 20%; width: 60%; height: 60%; 
+            border: 3px solid #00ff00; box-shadow: 0 0 0 1000px rgba(0,0,0,0.5);
+            display: grid; grid-template-columns: repeat(9, 1fr); grid-template-rows: repeat(9, 1fr);
+        }
+        .guide-box { border: 0.1px solid rgba(0,255,0,0.3); }
 
         .panel { background: var(--panel); padding: 15px; border-radius: 12px; margin-bottom: 15px; width: 90vw; max-width: 400px; }
         .tool-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; justify-items: center; }
@@ -19,27 +26,27 @@
         .tool.selected { border-color: #00ff00; box-shadow: 0 0 10px rgba(0,255,0,0.3); }
 
         .grid { display: grid; grid-template-columns: repeat(9, 1fr); width: 90vw; max-width: 400px; aspect-ratio: 1/1; gap: 1px; border: 2px solid #444; background: #333; }
-        .cell { background-size: contain; background-repeat: no-repeat; background-position: center; background-color: #222; display: flex; align-items: center; justify-content: center; }
+        .cell { background-size: contain; background-repeat: no-repeat; background-position: center; background-color: #222; }
 
         .btns { margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 90vw; max-width: 400px; }
         button { padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; }
-        textarea { width: 90vw; max-width: 400px; height: 100px; background: #000; color: #0f0; margin-top: 15px; border-radius: 6px; padding: 10px; box-sizing: border-box; font-family: monospace; font-size: 12px; }
+        textarea { width: 90vw; max-width: 400px; height: 100px; background: #000; color: #0f0; margin-top: 15px; border-radius: 6px; padding: 10px; box-sizing: border-box; font-family: monospace; font-size: 11px; }
     </style>
 </head>
 <body>
 
-    <h2>Sokoban AI Scanner</h2>
+    <h2>Precision Scanner</h2>
 
     <div id="video-container">
         <video id="video" autoplay playsinline></video>
-        <div id="scan-overlay">
+        <div id="scan-zone">
             <script>for(let i=0; i<81; i++) document.write('<div class="guide-box"></div>');</script>
         </div>
     </div>
 
     <div class="btns" style="margin-bottom: 20px;">
-        <button onclick="startCamera()" style="background:var(--accent);">On/Off Camera</button>
-        <button onclick="scanLevel()" style="background:#e67e22;">Scan Level</button>
+        <button onclick="startCamera()" style="background:var(--accent);">Camera On/Off</button>
+        <button onclick="scanLevel()" style="background:#e67e22;">Scan Zone</button>
     </div>
 
     <div class="panel">
@@ -91,56 +98,39 @@
 
         async function startCamera() {
             try {
-                if (video.srcObject) {
-                    video.srcObject.getTracks().forEach(track => track.stop());
-                    video.srcObject = null;
-                } else {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                    video.srcObject = stream;
-                }
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                video.srcObject = stream;
             } catch (err) { alert("Camera error: " + err); }
         }
 
         function scanLevel() {
             if (!video.srcObject) return alert("Start camera first!");
             ctx.drawImage(video, 0, 0, 360, 360);
-            const step = 360 / 9;
-            const sampleSize = 10; // Area to average
+            
+            // CROP LOGIC: Scan only the middle 60% of the image
+            const scanZoneSize = 360 * 0.6; 
+            const offset = (360 - scanZoneSize) / 2;
+            const step = scanZoneSize / 9;
 
             for (let r = 0; r < 9; r++) {
                 for (let c = 0; c < 9; c++) {
-                    const centerX = c * step + (step / 2);
-                    const centerY = r * step + (step / 2);
+                    const x = offset + (c * step) + (step / 2);
+                    const y = offset + (r * step) + (step / 2);
                     
-                    // Get average color of a block
-                    const imgData = ctx.getImageData(centerX - 5, centerY - 5, sampleSize, sampleSize).data;
-                    let rSum = 0, gSum = 0, bSum = 0;
-                    
-                    for (let i = 0; i < imgData.length; i += 4) {
-                        rSum += imgData[i];
-                        gSum += imgData[i+1];
-                        bSum += imgData[i+2];
-                    }
-                    
-                    const count = imgData.length / 4;
-                    gridData[r][c] = analyzeColor(rSum/count, gSum/count, bSum/count);
+                    const pixel = ctx.getImageData(x, y, 1, 1).data;
+                    gridData[r][c] = analyzeColor(pixel[0], pixel[1], pixel[2]);
                 }
             }
             renderGrid();
         }
 
         function analyzeColor(r, g, b) {
-            // Bright Blue (Goal/Blue Crate)
-            if (b > r + 40 && b > g) return 3; 
-            // Bright Green (Tree/Grass)
-            if (g > r + 20 && g > b) return 0; 
-            // Reddish (Player)
-            if (r > g + 40 && r > b + 40) return 2;
-            // Brownish (Crate)
-            if (r > 100 && g > 70 && b < 80) return 4;
-            // Very Dark (Wall)
-            if (r < 70 && g < 70 && b < 70) return 1;
-            
+            const brightness = (r + g + b) / 3;
+            if (b > r + 30 && b > g) return 3; // Blue Hole
+            if (g > r + 15 && g > b) return 0; // Green Tree
+            if (r > 150 && g < 100 && b < 100) return 2; // Red Player
+            if (r > 120 && g > 80 && b < 80) return 4; // Crate
+            if (brightness < 60) return 1; // Wall
             return 5; // Floor
         }
 
@@ -159,8 +149,7 @@
         }
 
         function generate() {
-            let code = "level_data = [\n" + gridData.map(row => `    [${row.join(', ')}]`).join(",\n") + "\n]";
-            document.getElementById('output').value = code;
+            document.getElementById('output').value = "level_data = [\n" + gridData.map(row => `    [${row.join(', ')}]`).join(",\n") + "\n]";
         }
 
         function resetGrid() {
